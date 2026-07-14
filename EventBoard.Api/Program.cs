@@ -70,14 +70,26 @@ builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add CORS
+// Add CORS. Allowed origins are configurable via "Cors:AllowedOrigins"
+// (e.g. Cors__AllowedOrigins__0=http://localhost). When none are configured we
+// fall back to AllowAnyOrigin for local development convenience.
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        if (allowedOrigins is { Length: > 0 })
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
     });
 });
 
@@ -86,14 +98,18 @@ builder.Services.AddLogging();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Configure the HTTP request pipeline.
+// Swagger is enabled in every environment so reviewers can explore the API
+// in the Docker deployment as well.
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+// HTTPS redirection is opt-in. It is disabled by default so the app works over
+// plain HTTP inside Docker (behind Nginx) and in local dev without a cert.
+if (builder.Configuration.GetValue("UseHttpsRedirection", false))
+{
+    app.UseHttpsRedirection();
+}
 
 // Serve uploaded event images from wwwroot/uploads
 app.UseStaticFiles();
