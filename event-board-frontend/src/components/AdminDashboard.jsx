@@ -419,6 +419,7 @@ const AdminDashboard = () => {
                             <th>Category</th>
                             <th>Date</th>
                             <th>Location</th>
+                            <th className="text-center">RSVPs</th>
                             <th className="text-center">Actions</th>
                           </tr>
                         </thead>
@@ -458,6 +459,12 @@ const AdminDashboard = () => {
                                 ) : (
                                   <span className="location-pill">Online</span>
                                 )}
+                              </td>
+
+                              <td data-label="RSVPs" className="text-center">
+                                <span className="badge bg-primary-soft text-primary" title={`Yes ${evt.rsvpYesCount} · Maybe ${evt.rsvpMaybeCount} · No ${evt.rsvpNoCount}`}>
+                                  {evt.rsvpTotalCount ?? 0}
+                                </span>
                               </td>
 
                               <td data-label="Actions">

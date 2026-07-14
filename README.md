@@ -92,7 +92,7 @@ community-event-board/
 ├── .env.example                 # Copy to .env; secrets & API keys
 ├── README.md
 ├── PROMPTS.md                   # 20 most impactful AI prompts used
-├── docs/adr/                    # Architecture Decision Records
+├── ADRs/                        # Architecture Decision Records
 │
 ├── EventBoard.Api/              # ASP.NET Core 8 Web API
 │   ├── Dockerfile               # multi-stage build/publish
@@ -296,5 +296,5 @@ Includes unit tests (services, with Moq) and integration tests (via
 ## Further Documentation
 
 - [`PROMPTS.md`](PROMPTS.md) — the 20 most impactful AI prompts used to build this project.
-- [`docs/adr/`](docs/adr/) — Architecture Decision Records.
+- [`ADRs/`](ADRs/) — Architecture Decision Records.
 - [`EventBoard.Api.Tests/UAT.md`](EventBoard.Api.Tests/UAT.md) — UAT test plan.

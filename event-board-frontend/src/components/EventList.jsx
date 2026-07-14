@@ -152,7 +152,7 @@ const EventList = () => {
           {events.map((event) => (
             <div className="col" key={event.id}>
               <div className="card h-100 shadow-sm event-card border-0 overflow-hidden">
-                {event.imageUrl && (
+                {event.imageUrl ? (
                   <img
                     src={event.imageUrl}
                     alt={event.title}
@@ -160,6 +160,18 @@ const EventList = () => {
                     style={{ height: 160, objectFit: 'cover' }}
                     loading="lazy"
                   />
+                ) : (
+                  // Placeholder thumbnail so every event card has a visual
+                  <div
+                    className="card-img-top d-flex align-items-center justify-content-center bg-gradient-primary-dark text-white"
+                    style={{ height: 160 }}
+                    aria-label={`${event.title} thumbnail`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" className="bi bi-calendar-event opacity-75" viewBox="0 0 16 16">
+                      <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z"/>
+                      <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+                    </svg>
+                  </div>
                 )}
                 <div className="card-body d-flex flex-column p-4">
                   <div className="d-flex justify-content-between align-items-center mb-3">

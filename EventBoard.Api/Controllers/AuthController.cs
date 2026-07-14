@@ -72,9 +72,9 @@ public class AuthController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            // Raised when the account is disabled.
+            // Raised when the account is disabled — treat as an authentication failure (401).
             _logger.LogWarning("Login blocked for email {Email}: {Message}", request.Email, ex.Message);
-            return StatusCode(StatusCodes.Status403Forbidden, new { Message = ex.Message });
+            return Unauthorized(new { Message = ex.Message });
         }
 
         if (result == null)
