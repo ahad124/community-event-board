@@ -1,0 +1,4 @@
+# Ignore uploaded event images, keep the folder tracked
+*
+!.gitkeep
+!.gitignore
