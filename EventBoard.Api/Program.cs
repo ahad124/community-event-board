@@ -17,9 +17,9 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-// Add DbContext
+// Add DbContext (SQL Server; connection string comes from configuration/env)
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -106,11 +106,31 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Seed database on startup
+// Apply migrations & seed database on startup.
+// SQL Server in Docker can take a while to accept connections, so retry a few times.
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    DbInitializer.Seed(db);
+    var services = scope.ServiceProvider;
+    var db = services.GetRequiredService<AppDbContext>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    const int maxAttempts = 12;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++)
+    {
+        try
+        {
+            DbInitializer.Seed(db);
+            logger.LogInformation("Database migrated and seeded successfully.");
+            break;
+        }
+        catch (Exception ex) when (attempt < maxAttempts)
+        {
+            logger.LogWarning(ex,
+                "Database not ready (attempt {Attempt}/{Max}). Retrying in 5s...",
+                attempt, maxAttempts);
+            Thread.Sleep(TimeSpan.FromSeconds(5));
+        }
+    }
 }
 
 app.Run();

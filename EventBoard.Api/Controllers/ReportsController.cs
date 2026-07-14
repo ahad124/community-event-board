@@ -2,7 +2,7 @@ using EventBoard.Api.Data;
 using EventBoard.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventBoard.Api.Controllers;
@@ -54,8 +54,8 @@ WHERE (@fromDate IS NULL OR e.Date >= @fromDate)
 GROUP BY e.Id, e.Title, c.Name, e.Date
 ORDER BY TotalBookings DESC, e.Date ASC;";
 
-        var fromParam = new SqliteParameter("@fromDate", (object?)from ?? DBNull.Value);
-        var toParam = new SqliteParameter("@toDate", (object?)to ?? DBNull.Value);
+        var fromParam = new SqlParameter("@fromDate", (object?)from ?? DBNull.Value);
+        var toParam = new SqlParameter("@toDate", (object?)to ?? DBNull.Value);
 
         var report = await _context.EventReport
             .FromSqlRaw(sql, fromParam, toParam)

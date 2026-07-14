@@ -7,8 +7,17 @@ public static class DbInitializer
 {
     public static void Seed(AppDbContext context)
     {
-        // Apply pending migrations or ensure created
-        context.Database.EnsureCreated();
+        // Apply the schema. Relational providers (SQL Server) run EF Core migrations;
+        // non-relational providers used in tests (InMemory) don't support migrations,
+        // so fall back to EnsureCreated().
+        if (context.Database.IsRelational())
+        {
+            context.Database.Migrate();
+        }
+        else
+        {
+            context.Database.EnsureCreated();
+        }
 
         // 1. Seed Categories
         if (!context.Categories.Any())
