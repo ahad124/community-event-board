@@ -32,4 +32,22 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .AnyAsync(u => u.Email.ToLower() == normalizedEmail);
     }
+
+    public async Task<List<User>> GetAllAsync()
+    {
+        return await _context.Users
+            .OrderBy(u => u.Email)
+            .ToListAsync();
+    }
+
+    public async Task<User?> GetByIdAsync(Guid id)
+    {
+        return await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+    }
+
+    public async Task UpdateAsync(User user)
+    {
+        _context.Entry(user).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+    }
 }

@@ -75,6 +75,13 @@ public class AuthService : IAuthService
             return null;
         }
 
+        // Reject disabled accounts
+        if (!user.IsActive)
+        {
+            _logger.LogWarning("Login blocked: account {Email} is disabled", email);
+            throw new InvalidOperationException("This account has been disabled. Please contact an administrator.");
+        }
+
         // Generate JWT token
         var (token, expiresAt) = _jwtTokenService.GenerateToken(user);
 

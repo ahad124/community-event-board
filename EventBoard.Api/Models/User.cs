@@ -23,6 +23,11 @@ public class User
     [StringLength(50)]
     public string Role { get; set; } = "User";
 
+    /// <summary>
+    /// Whether the account is enabled. Disabled users cannot log in.
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+
     // Navigation properties
     public ICollection<Event> OrganizedEvents { get; set; } = new List<Event>();
     public ICollection<EventBooking> Bookings { get; set; } = new List<EventBooking>();

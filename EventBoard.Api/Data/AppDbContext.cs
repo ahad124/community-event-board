@@ -27,6 +27,7 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(u => u.Id);
             entity.HasIndex(u => u.Email).IsUnique();
+            entity.Property(u => u.IsActive).HasDefaultValue(true);
         });
 
         // Configure Category entity

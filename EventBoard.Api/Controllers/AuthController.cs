@@ -1,3 +1,4 @@
+using EventBoard.Api.Models;
 using EventBoard.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
@@ -64,7 +65,17 @@ public class AuthController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var result = await _authService.LoginAsync(request.Email, request.Password);
+        AuthResponseDto? result;
+        try
+        {
+            result = await _authService.LoginAsync(request.Email, request.Password);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Raised when the account is disabled.
+            _logger.LogWarning("Login blocked for email {Email}: {Message}", request.Email, ex.Message);
+            return StatusCode(StatusCodes.Status403Forbidden, new { Message = ex.Message });
+        }
 
         if (result == null)
         {

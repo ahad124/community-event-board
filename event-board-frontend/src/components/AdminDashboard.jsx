@@ -3,10 +3,11 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('events'); // events, categories, bookings
+  const [activeTab, setActiveTab] = useState('events'); // events, categories, bookings, users
   const [events, setEvents] = useState([]);
   const [categories, setCategories] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -57,6 +58,9 @@ const AdminDashboard = () => {
         
         const bookRes = await axios.get(url);
         setBookings(bookRes.data);
+      } else if (activeTab === 'users') {
+        const res = await axios.get(`${baseUrl}/users`);
+        setUsers(res.data);
       }
     } catch (err) {
       console.error(err);
@@ -192,6 +196,35 @@ const AdminDashboard = () => {
     }
   };
 
+  // User management operations
+  const handleUpdateUserRole = async (userId, role) => {
+    setError('');
+    setSuccess('');
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    try {
+      await axios.put(`${baseUrl}/users/${userId}/role`, { role });
+      setSuccess(`User role updated to ${role}.`);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data || 'Failed to update user role.');
+    }
+  };
+
+  const handleToggleUserStatus = async (userId, isActive) => {
+    setError('');
+    setSuccess('');
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    try {
+      await axios.put(`${baseUrl}/users/${userId}/status`, { isActive });
+      setSuccess(isActive ? 'Account enabled.' : 'Account disabled.');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data || 'Failed to update account status.');
+    }
+  };
+
   return (
     <div className="container py-5">
       <div className="row mb-5 align-items-center">
@@ -238,6 +271,12 @@ const AdminDashboard = () => {
                 onClick={() => setActiveTab('bookings')}
               >
                 Event RSVPs
+              </button>
+              <button
+                className={`nav-link text-start rounded-pill py-2.5 px-4 fw-semibold ${activeTab === 'users' ? 'active bg-primary' : 'text-dark hover-light'}`}
+                onClick={() => setActiveTab('users')}
+              >
+                Manage Users
               </button>
             </div>
           </div>
@@ -528,6 +567,96 @@ const AdminDashboard = () => {
                         ))}
                       </tbody>
                     </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* USERS TAB */}
+            {activeTab === 'users' && (
+              <div>
+                <h2 className="h4 fw-bold mb-4">Users Management</h2>
+
+                {loading ? (
+                  <div className="text-center py-5"><div className="spinner-border text-primary" role="status"></div></div>
+                ) : users.length === 0 ? (
+                  <div className="table-empty">
+                    <div className="table-empty-icon">👥</div>
+                    <p className="table-empty-title">No users found</p>
+                  </div>
+                ) : (
+                  <div className="admin-table">
+                    <div className="table-responsive">
+                      <table className="table align-middle">
+                        <thead>
+                          <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th className="text-end">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {users.map((u) => {
+                            const isSelf = u.id === user?.id;
+                            return (
+                              <tr key={u.id}>
+                                <td data-label="User">
+                                  <div className="event-title">{u.userName}</div>
+                                  <span className="cell-subtle">{u.email}</span>
+                                </td>
+                                <td data-label="Role">
+                                  <span className={`badge ${u.role === 'Admin' ? 'bg-primary' : 'bg-secondary'}`}>
+                                    {u.role}
+                                  </span>
+                                </td>
+                                <td data-label="Status">
+                                  <span className={`badge ${u.isActive ? 'bg-success' : 'bg-danger'}`}>
+                                    {u.isActive ? 'Active' : 'Disabled'}
+                                  </span>
+                                </td>
+                                <td data-label="Actions" className="text-end">
+                                  {u.role === 'Admin' ? (
+                                    <button
+                                      onClick={() => handleUpdateUserRole(u.id, 'User')}
+                                      className="btn btn-outline-secondary btn-sm rounded-pill px-3 me-1"
+                                      disabled={isSelf}
+                                      title={isSelf ? 'You cannot change your own role' : 'Demote to User'}
+                                    >
+                                      Demote
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleUpdateUserRole(u.id, 'Admin')}
+                                      className="btn btn-outline-primary btn-sm rounded-pill px-3 me-1"
+                                    >
+                                      Promote
+                                    </button>
+                                  )}
+                                  {u.isActive ? (
+                                    <button
+                                      onClick={() => handleToggleUserStatus(u.id, false)}
+                                      className="btn btn-danger btn-sm rounded-pill px-3"
+                                      disabled={isSelf}
+                                      title={isSelf ? 'You cannot disable your own account' : 'Disable account'}
+                                    >
+                                      Disable
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleToggleUserStatus(u.id, true)}
+                                      className="btn btn-success btn-sm rounded-pill px-3"
+                                    >
+                                      Enable
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
