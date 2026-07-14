@@ -18,7 +18,7 @@ public class EventBooking
     public DateTime BookingDate { get; set; } = DateTime.UtcNow;
 
     [Required]
-    public BookingStatus Status { get; set; } = BookingStatus.Pending;
+    public BookingStatus Status { get; set; } = BookingStatus.Yes;
 
     // Navigation properties
     [ForeignKey("EventId")]

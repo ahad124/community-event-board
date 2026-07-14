@@ -5,6 +5,7 @@ import EventDetail from './components/EventDetail';
 import LoginRegister from './components/LoginRegister';
 import UserDashboard from './components/UserDashboard';
 import AdminDashboard from './components/AdminDashboard';
+import CreateEvent from './components/CreateEvent';
 import './App.css';
 
 // Protected Route Component
@@ -70,10 +71,13 @@ const NavigationBar = () => {
             )}
             {isAuthenticated && (
               <>
-                {/* Admins moderate all bookings in the Admin Panel, so a personal "My Bookings" doesn't apply */}
+                <li className="nav-item">
+                  <Link to="/create" className="nav-link px-3 rounded-pill">Create Event</Link>
+                </li>
+                {/* Admins moderate all RSVPs in the Admin Panel, so a personal dashboard doesn't apply */}
                 {!isAdmin && (
                   <li className="nav-item">
-                    <Link to="/dashboard" className="nav-link px-3 rounded-pill">My Bookings</Link>
+                    <Link to="/dashboard" className="nav-link px-3 rounded-pill">My Dashboard</Link>
                   </li>
                 )}
                 {isAdmin && (
@@ -113,30 +117,25 @@ function App() {
           {/* Main Content Area */}
           <main className="flex-grow-1">
             <Routes>
-              <Route 
-                path="/" 
-                element={
-                  <ProtectedRoute>
-                    <EventList />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/event/:id" 
-                element={
-                  <ProtectedRoute>
-                    <EventDetail />
-                  </ProtectedRoute>
-                } 
-              />
+              {/* Browsing is public — visitors don't need to sign in */}
+              <Route path="/" element={<EventList />} />
+              <Route path="/event/:id" element={<EventDetail />} />
               <Route path="/login" element={<LoginRegister />} />
-              <Route 
-                path="/dashboard" 
+              <Route
+                path="/create"
+                element={
+                  <ProtectedRoute>
+                    <CreateEvent />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <UserDashboard />
                   </ProtectedRoute>
-                } 
+                }
               />
               <Route 
                 path="/admin" 

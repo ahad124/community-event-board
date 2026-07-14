@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 const UserDashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [favorites, setFavorites] = useState([]);
+  const [myEvents, setMyEvents] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
   const [loadingFavorites, setLoadingFavorites] = useState(true);
   const [error, setError] = useState('');
@@ -57,6 +58,16 @@ const UserDashboard = () => {
     }
   };
 
+  const fetchMyEvents = async () => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const response = await axios.get(`${baseUrl}/events/mine`);
+      setMyEvents(response.data);
+    } catch (err) {
+      console.error('Error fetching created events:', err);
+    }
+  };
+
   const handleRemoveFavorite = async (eventId) => {
     try {
       const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -72,16 +83,17 @@ const UserDashboard = () => {
     if (user) {
       fetchBookings();
       fetchFavorites();
+      fetchMyEvents();
     }
   }, [user]);
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
-      case 'Confirmed':
+      case 'Yes':
         return 'bg-success text-white';
-      case 'Cancelled':
+      case 'No':
         return 'bg-danger text-white';
-      case 'Pending':
+      case 'Maybe':
       default:
         return 'bg-warning text-dark';
     }
@@ -117,8 +129,51 @@ const UserDashboard = () => {
         </div>
       </div>
 
+      {/* My Created Events */}
+      <div className="row mb-4">
+        <div className="col">
+          <div className="card border-0 shadow-sm rounded-4">
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h2 className="h4 fw-bold mb-0 d-flex align-items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" className="bi bi-calendar-plus text-primary" viewBox="0 0 16 16">
+                    <path d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7"/>
+                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+                  </svg>
+                  My Created Events ({myEvents.length})
+                </h2>
+                <Link to="/create" className="btn btn-primary btn-sm rounded-pill px-3">+ New Event</Link>
+              </div>
+
+              {myEvents.length === 0 ? (
+                <div className="text-center py-4 text-muted border border-dashed rounded-3">
+                  <p className="mb-0">You haven't created any events yet.</p>
+                </div>
+              ) : (
+                <div className="row g-3">
+                  {myEvents.map((evt) => (
+                    <div key={evt.id} className="col-md-6 col-xl-4">
+                      <div className="card border-light bg-light-soft shadow-xs rounded-3 h-100 p-3">
+                        <span className="badge bg-secondary-soft text-secondary mb-2 align-self-start">{evt.categoryName}</span>
+                        <h3 className="h6 fw-bold mb-1">
+                          <Link to={`/event/${evt.id}`} className="text-dark text-decoration-none">{evt.title}</Link>
+                        </h3>
+                        <small className="text-muted d-block mb-2">
+                          {new Date(evt.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </small>
+                        <small className="text-muted">RSVPs: {evt.rsvpTotalCount ?? 0} (Yes {evt.rsvpYesCount ?? 0})</small>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="row g-4">
-        {/* Bookings Column */}
+        {/* RSVPs Column */}
         <div className="col-lg-7">
           <div className="card border-0 shadow-sm rounded-4 h-100">
             <div className="card-body p-4">
@@ -126,7 +181,7 @@ const UserDashboard = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" className="bi bi-ticket-perforated-fill text-primary" viewBox="0 0 16 16">
                   <path d="M0 4.5A1.5 1.5 0 0 1 1.5 3h13A1.5 1.5 0 0 1 16 4.5V6a.5.5 0 0 1-.5.5 1.5 1.5 0 0 0 0 3 .5.5 0 0 1 .5.5v1.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 11.5V10a.5.5 0 0 1 .5-.5 1.5 1.5 0 0 0 0-3A.5.5 0 0 1 0 6zm4 1v1h8V5.5zm0 3v1h8v-1z"/>
                 </svg>
-                My Bookings ({filteredBookings.length})
+                My RSVPs ({filteredBookings.length})
               </h2>
 
               {error && <div className="alert alert-danger border-0 small">{error}</div>}
@@ -134,17 +189,17 @@ const UserDashboard = () => {
               {loadingBookings ? (
                 <div className="text-center py-5">
                   <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading bookings...</span>
+                    <span className="visually-hidden">Loading RSVPs...</span>
                   </div>
                 </div>
               ) : bookings.length === 0 ? (
                 <div className="text-center py-5 text-muted border border-dashed rounded-3">
-                  <p className="mb-0">You haven't booked any events yet.</p>
+                  <p className="mb-0">You haven't RSVP'd to any events yet.</p>
                   <Link to="/" className="btn btn-outline-primary btn-sm rounded-pill mt-3 px-4">Browse Events</Link>
                 </div>
               ) : filteredBookings.length === 0 ? (
                 <div className="text-center py-5 text-muted border border-dashed rounded-3">
-                  <p className="mb-0">No bookings match your search.</p>
+                  <p className="mb-0">No RSVPs match your search.</p>
                 </div>
               ) : (
                 <div className="d-flex flex-column gap-3">

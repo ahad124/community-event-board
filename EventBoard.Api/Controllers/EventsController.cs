@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using EventBoard.Api.Models;
 using EventBoard.Api.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -69,6 +70,25 @@ public class EventsController : ControllerBase
     }
 
     /// <summary>
+    /// Get events created by the currently authenticated user.
+    /// </summary>
+    [HttpGet("mine")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IEnumerable<EventDto>>> GetMyEvents()
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var organizerId))
+        {
+            return Unauthorized("Invalid user token claims.");
+        }
+
+        var events = await _eventRepository.GetByOrganizerIdAsync(organizerId);
+        return Ok(events.Select(e => MapToEventDto(e)));
+    }
+
+    /// <summary>
     /// Get events by category ID
     /// </summary>
     [HttpGet("category/{categoryId}")]
@@ -81,14 +101,14 @@ public class EventsController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new event (Admin only)
+    /// Create a new event (any authenticated user). The organizer is taken from
+    /// the JWT, so callers cannot create events on behalf of someone else.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<EventDto>> CreateEvent([FromBody] CreateEventRequest request)
     {
         _logger.LogInformation("Creating new event: {Title}", request.Title);
@@ -96,6 +116,12 @@ public class EventsController : ControllerBase
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
+        }
+
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var organizerId))
+        {
+            return Unauthorized("Invalid user token claims.");
         }
 
         var evt = new Event
@@ -106,7 +132,7 @@ public class EventsController : ControllerBase
             Location = request.Location?.Trim(),
             ImageUrl = request.ImageUrl?.Trim(),
             CategoryId = request.CategoryId,
-            OrganizerId = request.OrganizerId
+            OrganizerId = organizerId
         };
 
         var created = await _eventRepository.CreateAsync(evt);
@@ -197,12 +223,12 @@ public class EventsController : ControllerBase
     }
 
     /// <summary>
-    /// Upload an event image (Admin only). Returns the relative URL to store on the event.
-    /// Validates content-type, extension and size, and writes with a random file name
-    /// to prevent path traversal or overwriting existing files.
+    /// Upload an event image (any authenticated user). Returns the relative URL to
+    /// store on the event. Validates content-type, extension and size, and writes with
+    /// a random file name to prevent path traversal or overwriting existing files.
     /// </summary>
     [HttpPost("upload-image")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [RequestSizeLimit(MaxImageBytes)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -251,6 +277,7 @@ public class EventsController : ControllerBase
 
     private static EventDto MapToEventDto(Event evt)
     {
+        var bookings = evt.Bookings ?? new List<EventBooking>();
         return new EventDto
         {
             Id = evt.Id,
@@ -262,7 +289,11 @@ public class EventsController : ControllerBase
             CategoryId = evt.CategoryId,
             CategoryName = evt.Category?.Name ?? "Unknown Category",
             OrganizerId = evt.OrganizerId,
-            OrganizerEmail = evt.Organizer?.Email ?? "Unknown"
+            OrganizerEmail = evt.Organizer?.Email ?? "Unknown",
+            RsvpYesCount = bookings.Count(b => b.Status == BookingStatus.Yes),
+            RsvpMaybeCount = bookings.Count(b => b.Status == BookingStatus.Maybe),
+            RsvpNoCount = bookings.Count(b => b.Status == BookingStatus.No),
+            RsvpTotalCount = bookings.Count
         };
     }
 }
@@ -278,7 +309,6 @@ public class CreateEventRequest
     public string? Location { get; set; }
     public string? ImageUrl { get; set; }
     public int CategoryId { get; set; }
-    public Guid OrganizerId { get; set; }
 }
 
 /// <summary>
@@ -309,4 +339,10 @@ public class EventDto
     public string CategoryName { get; set; } = string.Empty;
     public Guid OrganizerId { get; set; }
     public string OrganizerEmail { get; set; } = string.Empty;
+
+    // RSVP tallies (shown on the event detail page)
+    public int RsvpYesCount { get; set; }
+    public int RsvpMaybeCount { get; set; }
+    public int RsvpNoCount { get; set; }
+    public int RsvpTotalCount { get; set; }
 }

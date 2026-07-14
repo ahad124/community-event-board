@@ -191,28 +191,28 @@ public static class DbInitializer
                             EventId = events[0].Id,
                             UserId = alice.Id,
                             BookingDate = DateTime.UtcNow.AddDays(-2),
-                            Status = BookingStatus.Confirmed
+                            Status = BookingStatus.Yes
                         },
                         new EventBooking
                         {
                             EventId = events[1].Id,
                             UserId = alice.Id,
                             BookingDate = DateTime.UtcNow.AddDays(-1),
-                            Status = BookingStatus.Pending
+                            Status = BookingStatus.Maybe
                         },
                         new EventBooking
                         {
                             EventId = events[0].Id,
                             UserId = bob.Id,
                             BookingDate = DateTime.UtcNow.AddDays(-3),
-                            Status = BookingStatus.Cancelled
+                            Status = BookingStatus.No
                         },
                         new EventBooking
                         {
                             EventId = events[2].Id,
                             UserId = bob.Id,
                             BookingDate = DateTime.UtcNow,
-                            Status = BookingStatus.Confirmed
+                            Status = BookingStatus.Yes
                         }
                     );
                 }

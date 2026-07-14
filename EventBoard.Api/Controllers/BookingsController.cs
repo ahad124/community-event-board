@@ -26,14 +26,16 @@ public class BookingsController : ControllerBase
     }
 
     /// <summary>
-    /// Book an event (Authenticated Users)
+    /// RSVP to an event (Authenticated Users). Accepts "Yes", "Maybe" or "No".
+    /// If the user has already RSVP'd, their response is updated (upsert).
     /// </summary>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BookingDto>> BookEvent([FromBody] CreateBookingRequest request)
+    public async Task<ActionResult<BookingDto>> Rsvp([FromBody] CreateBookingRequest request)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
         if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
@@ -41,7 +43,8 @@ public class BookingsController : ControllerBase
             return Unauthorized("Invalid user token claims.");
         }
 
-        _logger.LogInformation("User {UserId} is booking event {EventId}", userId, request.EventId);
+        _logger.LogInformation("User {UserId} RSVPing '{Status}' to event {EventId}",
+            userId, request.Status, request.EventId);
 
         var @event = await _eventRepository.GetByIdAsync(request.EventId);
         if (@event == null)
@@ -49,11 +52,14 @@ public class BookingsController : ControllerBase
             return NotFound($"Event with ID {request.EventId} not found.");
         }
 
-        // Check if booking already exists (excluding cancelled ones to allow re-booking)
-        var alreadyBooked = await _bookingRepository.HasBookingAsync(userId, request.EventId);
-        if (alreadyBooked)
+        // Upsert: update the existing RSVP if there is one, otherwise create it.
+        var existing = await _bookingRepository.GetByUserAndEventAsync(userId, request.EventId);
+        if (existing != null)
         {
-            return BadRequest("You already have an active booking for this event.");
+            existing.Status = request.Status;
+            existing.BookingDate = DateTime.UtcNow;
+            await _bookingRepository.UpdateAsync(existing);
+            return Ok(MapToBookingDto(existing));
         }
 
         var booking = new EventBooking
@@ -61,7 +67,7 @@ public class BookingsController : ControllerBase
             EventId = request.EventId,
             UserId = userId,
             BookingDate = DateTime.UtcNow,
-            Status = BookingStatus.Pending
+            Status = request.Status
         };
 
         var created = await _bookingRepository.CreateAsync(booking);
@@ -172,6 +178,9 @@ public class BookingsController : ControllerBase
 public class CreateBookingRequest
 {
     public int EventId { get; set; }
+
+    /// <summary>RSVP response: "Yes", "Maybe" or "No". Defaults to "Yes".</summary>
+    public BookingStatus Status { get; set; } = BookingStatus.Yes;
 }
 
 public class UpdateBookingStatusRequest

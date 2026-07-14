@@ -11,4 +11,5 @@ public interface IBookingRepository
     Task<IEnumerable<EventBooking>> GetAllAsync();
     Task UpdateAsync(EventBooking booking);
     Task<bool> HasBookingAsync(Guid userId, int eventId);
+    Task<EventBooking?> GetByUserAndEventAsync(Guid userId, int eventId);
 }

@@ -19,9 +19,9 @@ public class ReportsController : ControllerBase
     }
 
     /// <summary>
-    /// Per-event booking report (Admin only). For each event it returns the
-    /// category, total bookings, a breakdown by booking status, and the number
-    /// of times the event has been favorited. Optionally filtered by event date.
+    /// Per-event RSVP report (Admin only). For each event it returns the
+    /// category, total RSVPs, a breakdown by RSVP response (Yes/Maybe/No), and the
+    /// number of times the event has been favorited. Optionally filtered by event date.
     /// </summary>
     /// <param name="from">Only include events on or after this date (inclusive).</param>
     /// <param name="to">Only include events on or before this date (inclusive).</param>
@@ -41,10 +41,10 @@ SELECT
     e.Title                                                    AS Title,
     c.Name                                                     AS CategoryName,
     e.Date                                                     AS EventDate,
-    COUNT(b.Id)                                                AS TotalBookings,
-    SUM(CASE WHEN b.Status = 'Confirmed' THEN 1 ELSE 0 END)    AS ConfirmedBookings,
-    SUM(CASE WHEN b.Status = 'Pending'   THEN 1 ELSE 0 END)    AS PendingBookings,
-    SUM(CASE WHEN b.Status = 'Cancelled' THEN 1 ELSE 0 END)    AS CancelledBookings,
+    COUNT(b.Id)                                          AS TotalRsvps,
+    SUM(CASE WHEN b.Status = 'Yes'   THEN 1 ELSE 0 END)  AS YesRsvps,
+    SUM(CASE WHEN b.Status = 'Maybe' THEN 1 ELSE 0 END)  AS MaybeRsvps,
+    SUM(CASE WHEN b.Status = 'No'    THEN 1 ELSE 0 END)  AS NoRsvps,
     (SELECT COUNT(*) FROM Favorites f WHERE f.EventId = e.Id)  AS FavoritesCount
 FROM Events e
 INNER JOIN Categories c ON c.Id = e.CategoryId
@@ -52,7 +52,7 @@ LEFT JOIN Bookings b ON b.EventId = e.Id
 WHERE (@fromDate IS NULL OR e.Date >= @fromDate)
   AND (@toDate   IS NULL OR e.Date <= @toDate)
 GROUP BY e.Id, e.Title, c.Name, e.Date
-ORDER BY TotalBookings DESC, e.Date ASC;";
+ORDER BY TotalRsvps DESC, e.Date ASC;";
 
         var fromParam = new SqlParameter("@fromDate", (object?)from ?? DBNull.Value);
         var toParam = new SqlParameter("@toDate", (object?)to ?? DBNull.Value);

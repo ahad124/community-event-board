@@ -9,8 +9,8 @@ const EventDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Booking & Favorite state
-  const [bookingStatus, setBookingStatus] = useState(null); // 'Pending', 'Confirmed', 'Cancelled' or null
+  // RSVP & Favorite state
+  const [rsvpStatus, setRsvpStatus] = useState(null); // 'Yes' | 'Maybe' | 'No' | null
   const [isFavorited, setIsFavorited] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -18,7 +18,7 @@ const EventDetail = () => {
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
 
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const fetchEventDetail = async () => {
@@ -46,14 +46,10 @@ const EventDetail = () => {
       const isFav = favRes.data.some((fav) => fav.eventId === parseInt(id));
       setIsFavorited(isFav);
 
-      // 2. Check bookings
+      // 2. Check existing RSVP
       const bookRes = await axios.get(`${baseUrl}/bookings/my`);
-      const existingBooking = bookRes.data.find((b) => b.eventId === parseInt(id));
-      if (existingBooking) {
-        setBookingStatus(existingBooking.status);
-      } else {
-        setBookingStatus(null);
-      }
+      const existingRsvp = bookRes.data.find((b) => b.eventId === parseInt(id));
+      setRsvpStatus(existingRsvp ? existingRsvp.status : null);
     } catch (err) {
       console.error('Error checking user event status:', err);
     }
@@ -83,7 +79,7 @@ const EventDetail = () => {
     checkUserRelations();
   }, [id, isAuthenticated]);
 
-  const handleRegisterEvent = async () => {
+  const handleRsvp = async (status) => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
@@ -92,11 +88,13 @@ const EventDetail = () => {
     try {
       setActionLoading(true);
       const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-      const res = await axios.post(`${baseUrl}/bookings`, { eventId: parseInt(id) });
-      setBookingStatus(res.data.status);
+      const res = await axios.post(`${baseUrl}/bookings`, { eventId: parseInt(id), status });
+      setRsvpStatus(res.data.status);
+      // Refresh the event so the RSVP counts reflect the change.
+      await fetchEventDetail();
     } catch (err) {
-      console.error('Failed to book event:', err);
-      alert(err.response?.data || 'Failed to register for event.');
+      console.error('Failed to RSVP:', err);
+      alert(err.response?.data || 'Failed to submit RSVP.');
     } finally {
       setActionLoading(false);
     }
@@ -298,24 +296,56 @@ const EventDetail = () => {
                   )}
                 </div>
 
-                {/* Booking Action section */}
-                {bookingStatus ? (
-                  <div className={`alert p-3 rounded-3 text-center mb-0 fw-semibold ${
-                    bookingStatus === 'Confirmed' ? 'alert-success text-success' : bookingStatus === 'Cancelled' ? 'alert-danger text-danger' : 'alert-warning text-dark'
-                  }`}>
-                    Booking Status: {bookingStatus}
+                {/* RSVP tallies */}
+                <div className="mb-3">
+                  <small className="text-muted d-block mb-2 fw-semibold text-uppercase" style={{ letterSpacing: '.05em', fontSize: '.7rem' }}>
+                    RSVPs ({event.rsvpTotalCount ?? 0})
+                  </small>
+                  <div className="d-flex gap-2">
+                    <span className="badge rounded-pill bg-success-subtle text-success flex-fill py-2">
+                      Yes {event.rsvpYesCount ?? 0}
+                    </span>
+                    <span className="badge rounded-pill bg-warning-subtle text-dark flex-fill py-2">
+                      Maybe {event.rsvpMaybeCount ?? 0}
+                    </span>
+                    <span className="badge rounded-pill bg-danger-subtle text-danger flex-fill py-2">
+                      No {event.rsvpNoCount ?? 0}
+                    </span>
+                  </div>
+                </div>
+
+                {/* RSVP action */}
+                <small className="text-muted d-block mb-2 fw-semibold text-uppercase" style={{ letterSpacing: '.05em', fontSize: '.7rem' }}>
+                  {isAuthenticated ? 'Your RSVP' : 'RSVP'}
+                </small>
+                {isAuthenticated ? (
+                  <div className="btn-group w-100" role="group" aria-label="RSVP options">
+                    {['Yes', 'Maybe', 'No'].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => handleRsvp(option)}
+                        disabled={actionLoading}
+                        className={`btn fw-semibold ${
+                          rsvpStatus === option ? 'btn-primary' : 'btn-outline-primary'
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
                   </div>
                 ) : (
                   <button
-                    onClick={handleRegisterEvent}
-                    disabled={actionLoading}
-                    className="btn btn-primary w-100 rounded-pill py-2.5 fw-semibold btn-hover-scale shadow-sm"
+                    onClick={() => navigate('/login')}
+                    className="btn btn-primary w-100 rounded-pill py-2 fw-semibold shadow-sm"
                   >
-                    {actionLoading && (
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    )}
-                    {isAuthenticated ? 'Register for Event' : 'Sign In to Register'}
+                    Sign In to RSVP
                   </button>
+                )}
+                {rsvpStatus && (
+                  <div className="text-center small text-muted mt-2">
+                    You responded <strong>{rsvpStatus}</strong>.
+                  </div>
                 )}
               </div>
             </div>

@@ -11,9 +11,9 @@ public class EventReportRow
     public string Title { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
     public DateTime EventDate { get; set; }
-    public int TotalBookings { get; set; }
-    public int ConfirmedBookings { get; set; }
-    public int PendingBookings { get; set; }
-    public int CancelledBookings { get; set; }
+    public int TotalRsvps { get; set; }
+    public int YesRsvps { get; set; }
+    public int MaybeRsvps { get; set; }
+    public int NoRsvps { get; set; }
     public int FavoritesCount { get; set; }
 }

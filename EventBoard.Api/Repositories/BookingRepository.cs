@@ -67,6 +67,15 @@ public class BookingRepository : IBookingRepository
     public async Task<bool> HasBookingAsync(Guid userId, int eventId)
     {
         return await _context.Bookings
-            .AnyAsync(b => b.UserId == userId && b.EventId == eventId && b.Status != BookingStatus.Cancelled);
+            .AnyAsync(b => b.UserId == userId && b.EventId == eventId);
+    }
+
+    public async Task<EventBooking?> GetByUserAndEventAsync(Guid userId, int eventId)
+    {
+        return await _context.Bookings
+            .Include(b => b.Event)
+                .ThenInclude(e => e!.Category)
+            .Include(b => b.User)
+            .FirstOrDefaultAsync(b => b.UserId == userId && b.EventId == eventId);
     }
 }

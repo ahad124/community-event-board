@@ -192,29 +192,12 @@ const AdminDashboard = () => {
     }
   };
 
-  // Bookings moderation operations
-  const handleUpdateBookingStatus = async (bookingId, status) => {
-
-    setError('');
-    setSuccess('');
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-    try {
-      // Backend expects BookingStatus enum as its string representation (Pending/Confirmed/Cancelled)
-      await axios.put(`${baseUrl}/bookings/${bookingId}/status`, { status });
-      setSuccess(`Booking updated to ${status}.`);
-      fetchData();
-    } catch (err) {
-      console.error(err);
-      setError('Failed to update booking status.');
-    }
-  };
-
   return (
     <div className="container py-5">
       <div className="row mb-5 align-items-center">
         <div className="col-md-8">
           <h1 className="fw-bold text-gradient display-5">Admin Dashboard</h1>
-          <p className="text-muted mb-0">Manage categories, events, and user registration bookings.</p>
+          <p className="text-muted mb-0">Manage users, events, categories, and view RSVPs.</p>
         </div>
         <div className="col-md-4 text-md-end mt-3 mt-md-0">
           <button 
@@ -254,7 +237,7 @@ const AdminDashboard = () => {
                 className={`nav-link text-start rounded-pill py-2.5 px-4 fw-semibold ${activeTab === 'bookings' ? 'active bg-primary' : 'text-dark hover-light'}`}
                 onClick={() => setActiveTab('bookings')}
               >
-                Moderate Bookings
+                Event RSVPs
               </button>
             </div>
           </div>
@@ -482,7 +465,7 @@ const AdminDashboard = () => {
             {/* BOOKINGS TAB */}
             {activeTab === 'bookings' && (
               <div>
-                <h2 className="h4 fw-bold mb-4">Moderate Bookings</h2>
+                <h2 className="h4 fw-bold mb-4">Event RSVPs</h2>
 
                 <div className="mb-4 col-md-6">
                   <label className="form-label text-muted small">Select Event to Filter</label>
@@ -491,7 +474,7 @@ const AdminDashboard = () => {
                     value={selectedEventId}
                     onChange={(e) => setSelectedEventId(e.target.value)}
                   >
-                    <option value="all">All Bookings (Across All Events)</option>
+                    <option value="all">All RSVPs (Across All Events)</option>
                     {events.map((evt) => (
                       <option key={evt.id} value={evt.id}>{evt.title}</option>
                     ))}
@@ -503,8 +486,8 @@ const AdminDashboard = () => {
                 ) : bookings.length === 0 ? (
                   <div className="table-empty">
                     <div className="table-empty-icon">🎟️</div>
-                    <p className="table-empty-title">No bookings found</p>
-                    <p className="table-empty-text">Bookings for the selected event will appear here.</p>
+                    <p className="table-empty-title">No RSVPs found</p>
+                    <p className="table-empty-text">RSVPs for the selected event will appear here.</p>
                   </div>
                 ) : (
                   <div className="admin-table">
@@ -514,9 +497,8 @@ const AdminDashboard = () => {
                           <tr>
                             <th>Event</th>
                             <th>User Email</th>
-                            <th>Registration Date</th>
-                            <th>Status</th>
-                            <th className="text-end">Actions</th>
+                            <th>RSVP Date</th>
+                            <th>Response</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -529,42 +511,18 @@ const AdminDashboard = () => {
                             <td data-label="User Email">
                               <span className="cell-subtle">{booking.userEmail}</span>
                             </td>
-                            <td data-label="Registration Date">
+                            <td data-label="RSVP Date">
                               <span className="cell-subtle">
                                 <span className="cell-icon">📅</span>
                                 {new Date(booking.bookingDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                               </span>
                             </td>
-                            <td data-label="Status">
+                            <td data-label="Response">
                               <span className={`badge ${
-                                booking.status === 'Confirmed' ? 'bg-success' : booking.status === 'Cancelled' ? 'bg-danger' : 'bg-warning text-dark'
+                                booking.status === 'Yes' ? 'bg-success' : booking.status === 'No' ? 'bg-danger' : 'bg-warning text-dark'
                               }`}>
                                 {booking.status}
                               </span>
-                            </td>
-
-                            <td data-label="Actions" className="text-end">
-
-                              {booking.status === 'Pending' ? (
-                                <>
-                                  <button
-                                    onClick={() => handleUpdateBookingStatus(booking.id, 'Confirmed')}
-                                    className="btn btn-success btn-sm rounded-pill px-3 me-1"
-
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    onClick={() => handleUpdateBookingStatus(booking.id, 'Cancelled')}
-                                    className="btn btn-danger btn-sm rounded-pill px-3"
-
-                                  >
-                                    Reject
-                                  </button>
-                                </>
-                              ) : (
-                                <span className="text-muted small">Completed</span>
-                              )}
                             </td>
                           </tr>
                         ))}

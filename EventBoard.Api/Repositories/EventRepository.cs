@@ -18,6 +18,7 @@ public class EventRepository : IEventRepository
         return await _context.Events
             .Include(e => e.Category)
             .Include(e => e.Organizer)
+            .Include(e => e.Bookings)
             .AsNoTracking()
             .ToListAsync();
     }
@@ -27,6 +28,7 @@ public class EventRepository : IEventRepository
         return await _context.Events
             .Include(e => e.Category)
             .Include(e => e.Organizer)
+            .Include(e => e.Bookings)
             .FirstOrDefaultAsync(e => e.Id == id);
     }
 
@@ -46,6 +48,7 @@ public class EventRepository : IEventRepository
             .Where(e => e.OrganizerId == organizerId)
             .Include(e => e.Category)
             .Include(e => e.Organizer)
+            .Include(e => e.Bookings)
             .AsNoTracking()
             .ToListAsync();
     }
