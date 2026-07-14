@@ -242,7 +242,7 @@ namespace EventBoard.Api.Migrations
                     b.HasOne("EventBoard.Api.Models.User", "User")
                         .WithMany("Bookings")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Event");
@@ -261,7 +261,7 @@ namespace EventBoard.Api.Migrations
                     b.HasOne("EventBoard.Api.Models.User", "User")
                         .WithMany("Favorites")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Event");

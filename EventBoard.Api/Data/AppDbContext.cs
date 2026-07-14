@@ -74,10 +74,13 @@ public class AppDbContext : DbContext
                 .HasForeignKey(eb => eb.EventId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // NoAction on the direct User→Booking path avoids a "multiple cascade
+            // paths" error on SQL Server (bookings are already removed when the
+            // event is deleted, which itself cascades from the organizer).
             entity.HasOne(eb => eb.User)
                 .WithMany(u => u.Bookings)
                 .HasForeignKey(eb => eb.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         // Configure EventFavorite (Composite Primary Key / Join Table)
@@ -88,10 +91,12 @@ public class AppDbContext : DbContext
             entity.HasIndex(ef => ef.EventId);
 
             // Relationships
+            // NoAction on the direct User→Favorite path avoids a "multiple cascade
+            // paths" error on SQL Server (favorites cascade from the event side).
             entity.HasOne(ef => ef.User)
                 .WithMany(u => u.Favorites)
                 .HasForeignKey(ef => ef.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasOne(ef => ef.Event)
                 .WithMany(e => e.Favorites)

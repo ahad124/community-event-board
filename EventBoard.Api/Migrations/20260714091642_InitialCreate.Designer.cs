@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EventBoard.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260714074110_AddUserIsActive")]
-    partial class AddUserIsActive
+    [Migration("20260714091642_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -245,7 +245,7 @@ namespace EventBoard.Api.Migrations
                     b.HasOne("EventBoard.Api.Models.User", "User")
                         .WithMany("Bookings")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Event");
@@ -264,7 +264,7 @@ namespace EventBoard.Api.Migrations
                     b.HasOne("EventBoard.Api.Models.User", "User")
                         .WithMany("Favorites")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Event");
