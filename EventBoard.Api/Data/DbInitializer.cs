@@ -82,7 +82,7 @@ public static class DbInitializer
                     Title = "Global Tech Summit 2026",
                     Description = "The premier developer and tech conference covering cloud, AI, and architecture.",
                     Date = DateTime.UtcNow.AddMonths(1),
-                    Location = "San Francisco Convention Center, CA",
+                    Location = "San Francisco, CA",
                     CategoryId = conference.Id,
                     OrganizerId = admin.Id
                 },
@@ -91,7 +91,7 @@ public static class DbInitializer
                     Title = "Intro to React & Vite Workshop",
                     Description = "A hands-on coding workshop to get started with modern React development using Vite.",
                     Date = DateTime.UtcNow.AddDays(15),
-                    Location = "Digital Innovation Hub, Room 101",
+                    Location = "Austin, TX",
                     CategoryId = workshop.Id,
                     OrganizerId = admin.Id
                 },
@@ -100,7 +100,7 @@ public static class DbInitializer
                     Title = "AI & Machine Learning meetup",
                     Description = "Casual networking and lightning talks about LLMs and agents.",
                     Date = DateTime.UtcNow.AddDays(7),
-                    Location = "Tech Space Lounge",
+                    Location = "New York, NY",
                     CategoryId = meetup.Id,
                     OrganizerId = admin.Id
                 },
@@ -109,7 +109,7 @@ public static class DbInitializer
                     Title = "Symphony of Lights Concert",
                     Description = "Enjoy an evening of classical music with a modern electronic twist.",
                     Date = DateTime.UtcNow.AddMonths(2),
-                    Location = "Grand Opera House",
+                    Location = "Chicago, IL",
                     CategoryId = concert.Id,
                     OrganizerId = admin.Id
                 },
@@ -127,7 +127,7 @@ public static class DbInitializer
                     Title = "Startup Founders Meetup",
                     Description = "Connect with early-stage founders and venture capital professionals.",
                     Date = DateTime.UtcNow.AddDays(20),
-                    Location = "WeWork Shared Area, 4th Floor",
+                    Location = "Denver, CO",
                     CategoryId = meetup.Id,
                     OrganizerId = admin.Id
                 },
@@ -136,7 +136,7 @@ public static class DbInitializer
                     Title = "Advanced ASP.NET Core Workshop",
                     Description = "Advanced concepts including middleware optimization, security, and scalability.",
                     Date = DateTime.UtcNow.AddMonths(1).AddDays(10),
-                    Location = "Training Center, Seattle, WA",
+                    Location = "Seattle, WA",
                     CategoryId = workshop.Id,
                     OrganizerId = admin.Id
                 },
@@ -145,7 +145,7 @@ public static class DbInitializer
                     Title = "Cybersecurity Conference 2026",
                     Description = "Annual cybersecurity summit focusing on modern threats and defense strategies.",
                     Date = DateTime.UtcNow.AddMonths(3),
-                    Location = "Marriott Ballroom",
+                    Location = "Boston, MA",
                     CategoryId = conference.Id,
                     OrganizerId = admin.Id
                 },
@@ -154,7 +154,7 @@ public static class DbInitializer
                     Title = "Vocal Harmony Concert",
                     Description = "A relaxing live acoustic showcase featuring independent artists.",
                     Date = DateTime.UtcNow.AddMonths(2).AddDays(15),
-                    Location = "Underground Music Club",
+                    Location = "Nashville, TN",
                     CategoryId = concert.Id,
                     OrganizerId = admin.Id
                 },

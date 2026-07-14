@@ -42,3 +42,4 @@ pnpm-debug.log*
 # Real secrets/keys should come from environment / .env (not committed)
 appsettings.*.local.json
 .env.local
+/.env
