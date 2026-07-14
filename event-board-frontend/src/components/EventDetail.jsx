@@ -294,6 +294,33 @@ const EventDetail = () => {
                       Weather information is currently unavailable.
                     </p>
                   )}
+
+                  {/* Short forecast */}
+                  {weather?.forecast?.length > 0 && (
+                    <div className="mt-3">
+                      <small className="text-muted d-block mb-2 fw-semibold text-uppercase" style={{ letterSpacing: '.05em', fontSize: '.7rem' }}>
+                        Forecast
+                      </small>
+                      <div className="d-flex gap-2 flex-wrap">
+                        {weather.forecast.map((f, idx) => (
+                          <div key={idx} className="text-center p-2 rounded-3 bg-light border flex-fill" style={{ minWidth: 64 }}>
+                            <div className="small fw-semibold">
+                              {new Date(f.dateTime).toLocaleDateString(undefined, { weekday: 'short' })}
+                            </div>
+                            {f.icon && (
+                              <img
+                                src={`https://openweathermap.org/img/wn/${f.icon}.png`}
+                                alt={f.description}
+                                width="40"
+                                height="40"
+                              />
+                            )}
+                            <div className="small fw-bold">{Math.round(f.temperatureC)}°C</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* RSVP tallies */}

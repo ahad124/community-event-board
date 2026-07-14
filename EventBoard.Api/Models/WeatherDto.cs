@@ -13,4 +13,16 @@ public class WeatherDto
     public int Humidity { get; set; }
     public string Description { get; set; } = string.Empty;
     public string Icon { get; set; } = string.Empty;
+
+    /// <summary>A short upcoming forecast (a few daily snapshots). May be empty.</summary>
+    public List<WeatherForecastItem> Forecast { get; set; } = new();
+}
+
+/// <summary>One point in the short forecast.</summary>
+public class WeatherForecastItem
+{
+    public DateTime DateTime { get; set; }
+    public double TemperatureC { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public string Icon { get; set; } = string.Empty;
 }

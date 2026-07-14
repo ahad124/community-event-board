@@ -64,4 +64,40 @@ ORDER BY TotalRsvps DESC, e.Date ASC;";
 
         return Ok(report);
     }
+
+    /// <summary>
+    /// Summary counts for the admin dashboard (Admin only): total users, events,
+    /// RSVPs (with a Yes/Maybe/No breakdown), categories and favorites.
+    /// </summary>
+    [HttpGet("stats")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<StatsDto>> GetStats()
+    {
+        var stats = new StatsDto
+        {
+            TotalUsers = await _context.Users.CountAsync(),
+            TotalEvents = await _context.Events.CountAsync(),
+            TotalCategories = await _context.Categories.CountAsync(),
+            TotalRsvps = await _context.Bookings.CountAsync(),
+            YesRsvps = await _context.Bookings.CountAsync(b => b.Status == BookingStatus.Yes),
+            MaybeRsvps = await _context.Bookings.CountAsync(b => b.Status == BookingStatus.Maybe),
+            NoRsvps = await _context.Bookings.CountAsync(b => b.Status == BookingStatus.No),
+            TotalFavorites = await _context.Favorites.CountAsync()
+        };
+
+        return Ok(stats);
+    }
+}
+
+public class StatsDto
+{
+    public int TotalUsers { get; set; }
+    public int TotalEvents { get; set; }
+    public int TotalCategories { get; set; }
+    public int TotalRsvps { get; set; }
+    public int YesRsvps { get; set; }
+    public int MaybeRsvps { get; set; }
+    public int NoRsvps { get; set; }
+    public int TotalFavorites { get; set; }
 }

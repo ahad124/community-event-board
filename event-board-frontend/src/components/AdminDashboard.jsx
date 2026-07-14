@@ -8,6 +8,7 @@ const AdminDashboard = () => {
   const [categories, setCategories] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [users, setUsers] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -73,6 +74,20 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchData();
   }, [activeTab, selectedEventId]);
+
+  // Load summary statistics once for the dashboard header.
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+        const res = await axios.get(`${baseUrl}/reports/stats`);
+        setStats(res.data);
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+      }
+    };
+    fetchStats();
+  }, [activeTab]);
 
   // Handle Event submit (create or update)
   const handleEventSubmit = async (e) => {
@@ -245,6 +260,32 @@ const AdminDashboard = () => {
           </button>
         </div>
       </div>
+
+      {/* Statistics */}
+      {stats && (
+        <div className="row g-3 mb-4">
+          {[
+            { label: 'Users', value: stats.totalUsers, icon: '👥' },
+            { label: 'Events', value: stats.totalEvents, icon: '📅' },
+            { label: 'Categories', value: stats.totalCategories, icon: '🏷️' },
+            { label: 'RSVPs', value: stats.totalRsvps, icon: '🎟️' },
+            { label: 'Favorites', value: stats.totalFavorites, icon: '❤️' },
+          ].map((s) => (
+            <div key={s.label} className="col-6 col-md">
+              <div className="card border-0 shadow-sm rounded-4 h-100 text-center p-3">
+                <div style={{ fontSize: '1.5rem' }}>{s.icon}</div>
+                <div className="h3 fw-bold mb-0">{s.value}</div>
+                <small className="text-muted">{s.label}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {stats && (
+        <p className="text-muted small mb-4">
+          RSVP breakdown — Yes: {stats.yesRsvps} · Maybe: {stats.maybeRsvps} · No: {stats.noRsvps}
+        </p>
+      )}
 
       {error && <div className="alert alert-danger border-0 shadow-xs mb-4">{error}</div>}
       {success && <div className="alert alert-success border-0 shadow-xs mb-4">{success}</div>}

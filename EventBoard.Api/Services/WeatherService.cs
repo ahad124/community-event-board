@@ -58,7 +58,7 @@ public class WeatherService : IWeatherService
             var weatherArray = root.GetProperty("weather");
             var firstWeather = weatherArray.EnumerateArray().FirstOrDefault();
 
-            return new WeatherDto
+            var dto = new WeatherDto
             {
                 Available = true,
                 City = root.TryGetProperty("name", out var name) ? name.GetString() ?? city : city,
@@ -72,6 +72,10 @@ public class WeatherService : IWeatherService
                     ? ic.GetString() ?? string.Empty
                     : string.Empty
             };
+
+            // Best-effort short forecast; failures here don't affect current weather.
+            dto.Forecast = await GetForecastAsync(city, apiKey, cancellationToken);
+            return dto;
         }
         catch (Exception ex)
         {
@@ -79,5 +83,62 @@ public class WeatherService : IWeatherService
             _logger.LogError(ex, "Failed to fetch weather for city '{City}'", city);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Fetches a short forecast (one snapshot per day, up to 4 days) from the
+    /// OpenWeather 5-day/3-hour forecast API. Returns an empty list on any failure.
+    /// </summary>
+    private async Task<List<WeatherForecastItem>> GetForecastAsync(
+        string city, string apiKey, CancellationToken cancellationToken)
+    {
+        var items = new List<WeatherForecastItem>();
+        try
+        {
+            var requestUri = $"/data/2.5/forecast?q={Uri.EscapeDataString(city)}&units=metric&appid={apiKey}";
+            using var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return items;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+
+            if (!doc.RootElement.TryGetProperty("list", out var list) || list.ValueKind != JsonValueKind.Array)
+            {
+                return items;
+            }
+
+            // The list is in 3-hour steps (8 per day). Take one snapshot per day
+            // (indexes 0, 8, 16, 24) for a concise multi-day outlook.
+            var all = list.EnumerateArray().ToList();
+            for (var i = 0; i < all.Count && items.Count < 4; i += 8)
+            {
+                var entry = all[i];
+                var main = entry.GetProperty("main");
+                var firstWeather = entry.GetProperty("weather").EnumerateArray().FirstOrDefault();
+
+                items.Add(new WeatherForecastItem
+                {
+                    DateTime = entry.TryGetProperty("dt", out var dt)
+                        ? DateTimeOffset.FromUnixTimeSeconds(dt.GetInt64()).UtcDateTime
+                        : DateTime.UtcNow,
+                    TemperatureC = main.GetProperty("temp").GetDouble(),
+                    Description = firstWeather.ValueKind == JsonValueKind.Object && firstWeather.TryGetProperty("description", out var d)
+                        ? d.GetString() ?? string.Empty
+                        : string.Empty,
+                    Icon = firstWeather.ValueKind == JsonValueKind.Object && firstWeather.TryGetProperty("icon", out var ic)
+                        ? ic.GetString() ?? string.Empty
+                        : string.Empty
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch forecast for city '{City}'", city);
+        }
+
+        return items;
     }
 }
