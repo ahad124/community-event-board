@@ -225,14 +225,12 @@ const EventDetail = () => {
           <div className="row g-5">
             <div className="col-lg-8">
               <h2 className="h4 fw-bold mb-3 border-bottom pb-2">About the Event</h2>
-              {/* Render the description as rich HTML so organizers can use basic
-                  formatting (bold, links, line breaks) in their write-ups. */}
-              <p
-                className="lead text-muted fs-5 lh-base mb-4"
-                style={{ whiteSpace: 'pre-line' }}
-                dangerouslySetInnerHTML={{ __html: event.description }}
-              />
-
+              {/* Render the description as text. React escapes interpolated
+                  values, so any HTML/script in the description is shown literally
+                  and never executed. */}
+              <p className="lead text-muted fs-5 lh-base mb-4" style={{ whiteSpace: 'pre-line' }}>
+                {event.description}
+              </p>
             </div>
 
             <div className="col-lg-4">
