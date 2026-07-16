@@ -44,6 +44,11 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.Date);
             entity.HasIndex(e => e.CategoryId);
 
+            // Cap Location length so it can be indexed (SQL Server cannot index
+            // nvarchar(max)); the index supports the detailed-listing location filter.
+            entity.Property(e => e.Location).HasMaxLength(256);
+            entity.HasIndex(e => e.Location);
+
             // One-to-many relationship: User (Organizer) to Event
             entity.HasOne(e => e.Organizer)
                 .WithMany(u => u.OrganizedEvents)

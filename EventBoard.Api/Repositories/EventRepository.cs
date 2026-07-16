@@ -71,34 +71,35 @@ public class EventRepository : IEventRepository
     public async Task<IEnumerable<EventDetailedDto>> GetDetailedAsync(
         int? categoryId, DateTime? from, DateTime? to, string? location, string? q)
     {
-        // Load every event, then filter in memory (does not use the DB indexes).
-        var all = await _context.Events.ToListAsync();
+        // Single, set-based query. Filters are applied in the database (using the
+        // Date/CategoryId/Location indexes) and related data is fetched in one round
+        // trip via a projection — the per-event aggregates (RSVP tallies, favorites)
+        // are computed by the database, not N+1 round trips.
+        var query = _context.Events.AsNoTracking();
 
-        var filtered = all.Where(e =>
-            (!categoryId.HasValue || e.CategoryId == categoryId.Value) &&
-            (!from.HasValue || e.Date >= from.Value) &&
-            (!to.HasValue || e.Date <= to.Value) &&
-            (string.IsNullOrWhiteSpace(location) ||
-                (e.Location ?? string.Empty).Contains(location, StringComparison.OrdinalIgnoreCase)) &&
-            (string.IsNullOrWhiteSpace(q) ||
-                e.Title.Contains(q, StringComparison.OrdinalIgnoreCase)))
-            .ToList();
-
-        var result = new List<EventDetailedDto>(filtered.Count);
-
-        // For each event, fetch its related data one query at a time (N+1).
-        foreach (var e in filtered)
+        if (categoryId.HasValue)
         {
-            var category = await _context.Categories.FindAsync(e.CategoryId);
-            var organizer = await _context.Users.FindAsync(e.OrganizerId);
-            var bookings = await _context.Bookings
-                .Where(b => b.EventId == e.Id)
-                .ToListAsync();
-            var favoritesCount = await _context.Favorites
-                .Where(f => f.EventId == e.Id)
-                .CountAsync();
+            query = query.Where(e => e.CategoryId == categoryId.Value);
+        }
+        if (from.HasValue)
+        {
+            query = query.Where(e => e.Date >= from.Value);
+        }
+        if (to.HasValue)
+        {
+            query = query.Where(e => e.Date <= to.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(location))
+        {
+            query = query.Where(e => e.Location != null && e.Location.Contains(location));
+        }
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            query = query.Where(e => e.Title.Contains(q));
+        }
 
-            result.Add(new EventDetailedDto
+        return await query
+            .Select(e => new EventDetailedDto
             {
                 Id = e.Id,
                 Title = e.Title,
@@ -107,18 +108,16 @@ public class EventRepository : IEventRepository
                 Location = e.Location,
                 ImageUrl = e.ImageUrl,
                 CategoryId = e.CategoryId,
-                CategoryName = category?.Name ?? "Unknown Category",
+                CategoryName = e.Category!.Name,
                 OrganizerId = e.OrganizerId,
-                OrganizerEmail = organizer?.Email ?? "Unknown",
-                RsvpYesCount = bookings.Count(b => b.Status == BookingStatus.Yes),
-                RsvpMaybeCount = bookings.Count(b => b.Status == BookingStatus.Maybe),
-                RsvpNoCount = bookings.Count(b => b.Status == BookingStatus.No),
-                RsvpTotalCount = bookings.Count,
-                FavoritesCount = favoritesCount
-            });
-        }
-
-        return result;
+                OrganizerEmail = e.Organizer!.Email,
+                RsvpYesCount = e.Bookings.Count(b => b.Status == BookingStatus.Yes),
+                RsvpMaybeCount = e.Bookings.Count(b => b.Status == BookingStatus.Maybe),
+                RsvpNoCount = e.Bookings.Count(b => b.Status == BookingStatus.No),
+                RsvpTotalCount = e.Bookings.Count,
+                FavoritesCount = e.Favorites.Count
+            })
+            .ToListAsync();
     }
 
     public async Task<Event> CreateAsync(Event @event)
