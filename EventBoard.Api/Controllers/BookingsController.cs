@@ -88,6 +88,16 @@ public class BookingsController : ControllerBase
             return NotFound();
         }
 
+        // Only the booking's owner or an Admin may view it. Without this check a
+        // user could read anyone else's booking by guessing the numeric id (IDOR).
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (booking.UserId.ToString() != userIdString && userRole != "Admin")
+        {
+            return Forbid();
+        }
+
         return Ok(MapToBookingDto(booking));
     }
 
