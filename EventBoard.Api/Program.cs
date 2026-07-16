@@ -166,14 +166,15 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Apply migrations & seed database on startup.
-// SQL Server in Docker can take a while to accept connections, so retry a few times.
+// The 'sqlserver' service is already gated on a Docker health check, so only a
+// few retries are needed to cover the brief window before it accepts connections.
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var db = services.GetRequiredService<AppDbContext>();
     var logger = services.GetRequiredService<ILogger<Program>>();
 
-    const int maxAttempts = 12;
+    const int maxAttempts = 3;
     for (var attempt = 1; attempt <= maxAttempts; attempt++)
     {
         try
@@ -188,6 +189,17 @@ using (var scope = app.Services.CreateScope())
                 "Database not ready (attempt {Attempt}/{Max}). Retrying in 5s...",
                 attempt, maxAttempts);
             Thread.Sleep(TimeSpan.FromSeconds(5));
+        }
+        catch (Exception ex)
+        {
+            // Final attempt failed. Do NOT crash the process — start the app anyway
+            // so it can serve health/diagnostics and so a misconfiguration surfaces
+            // as observable request-time errors (logged to Seq) rather than a boot
+            // crash loop. DB-backed endpoints will fail until the config is fixed.
+            logger.LogError(ex,
+                "Database initialization failed after {Max} attempts. Starting the " +
+                "application anyway; database-backed endpoints will fail until the " +
+                "connection is restored.", maxAttempts);
         }
     }
 }
