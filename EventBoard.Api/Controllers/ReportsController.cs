@@ -26,6 +26,7 @@ public class ReportsController : ControllerBase
     /// <param name="from">Only include events on or after this date (inclusive).</param>
     /// <param name="to">Only include events on or before this date (inclusive).</param>
     [HttpGet("events")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<EventReportRow>>> GetEventsReport(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to)
@@ -69,6 +70,7 @@ ORDER BY TotalRsvps DESC, e.Date ASC;";
     /// RSVPs (with a Yes/Maybe/No breakdown), categories and favorites.
     /// </summary>
     [HttpGet("stats")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<StatsDto>> GetStats()
     {
