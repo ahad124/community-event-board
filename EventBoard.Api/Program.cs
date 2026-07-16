@@ -4,6 +4,7 @@ using EventBoard.Api.Data;
 using EventBoard.Api.Repositories;
 using EventBoard.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Polly;
@@ -98,9 +99,35 @@ builder.Services.AddLogging();
 
 var app = builder.Build();
 
-// Show a detailed error page (stack trace, query, cookies) whenever an
-// unhandled exception occurs. Handy for diagnosing issues in any environment.
-app.UseDeveloperExceptionPage();
+// Global error handling.
+// In Development we surface the detailed developer exception page to aid
+// debugging. In every other environment (incl. Production) unhandled exceptions
+// are converted to a generic RFC 7807 ProblemDetails 500 that reveals no stack
+// trace, exception type, or internal details to the client.
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.ContentType = "application/problem+json";
+
+            var problem = new ProblemDetails
+            {
+                Status = StatusCodes.Status500InternalServerError,
+                Title = "An unexpected error occurred.",
+                Detail = "The server encountered an error while processing your request."
+            };
+
+            await context.Response.WriteAsJsonAsync(problem);
+        });
+    });
+}
 
 // Configure the HTTP request pipeline.
 // Swagger is enabled in every environment so reviewers can explore the API
