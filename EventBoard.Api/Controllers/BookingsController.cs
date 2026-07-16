@@ -88,14 +88,6 @@ public class BookingsController : ControllerBase
             return NotFound();
         }
 
-        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
-        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
-        if (booking.UserId.ToString() != userIdString && userRole != "Admin")
-        {
-            return Forbid();
-        }
-
         return Ok(MapToBookingDto(booking));
     }
 

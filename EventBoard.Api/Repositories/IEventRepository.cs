@@ -8,6 +8,7 @@ public interface IEventRepository
     Task<Event?> GetByIdAsync(int id);
     Task<IEnumerable<Event>> GetByCategoryIdAsync(int categoryId);
     Task<IEnumerable<Event>> GetByOrganizerIdAsync(Guid organizerId);
+    Task<IEnumerable<Event>> SearchByTitleAsync(string term);
     Task<Event> CreateAsync(Event @event);
     Task UpdateAsync(Event @event);
     Task DeleteAsync(int id);

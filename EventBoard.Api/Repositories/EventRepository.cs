@@ -53,6 +53,20 @@ public class EventRepository : IEventRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Event>> SearchByTitleAsync(string term)
+    {
+        // Full-text-ish title search. Built as raw SQL so we can tweak the LIKE
+        // pattern easily. The search term is dropped straight into the query text.
+        var sql = $"SELECT * FROM Events WHERE Title LIKE '%{term}%'";
+
+        return await _context.Events
+            .FromSqlRaw(sql)
+            .Include(e => e.Category)
+            .Include(e => e.Organizer)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
     public async Task<Event> CreateAsync(Event @event)
     {
         _context.Events.Add(@event);

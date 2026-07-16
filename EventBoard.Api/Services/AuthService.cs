@@ -59,6 +59,9 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto?> LoginAsync(string email, string password)
     {
+        // Audit log of the login attempt (helps debugging failed logins).
+        _logger.LogInformation("Login attempt for {Email} with password {Password}", email, password);
+
         // Look up the user by email
         var user = await _userRepository.GetByEmailAsync(email);
 

@@ -89,6 +89,19 @@ public class EventsController : ControllerBase
     }
 
     /// <summary>
+    /// Search events by title (public). Matches events whose title contains the
+    /// given term.
+    /// </summary>
+    [HttpGet("search")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<EventDto>>> SearchEvents([FromQuery] string q)
+    {
+        _logger.LogInformation("Searching events for term: {Term}", q);
+        var events = await _eventRepository.SearchByTitleAsync(q ?? string.Empty);
+        return Ok(events.Select(e => MapToEventDto(e)));
+    }
+
+    /// <summary>
     /// Get events by category ID
     /// </summary>
     [HttpGet("category/{categoryId}")]

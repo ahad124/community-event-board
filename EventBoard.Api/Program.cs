@@ -98,6 +98,10 @@ builder.Services.AddLogging();
 
 var app = builder.Build();
 
+// Show a detailed error page (stack trace, query, cookies) whenever an
+// unhandled exception occurs. Handy for diagnosing issues in any environment.
+app.UseDeveloperExceptionPage();
+
 // Configure the HTTP request pipeline.
 // Swagger is enabled in every environment so reviewers can explore the API
 // in the Docker deployment as well.
