@@ -244,5 +244,103 @@ public static class DbInitializer
                 context.SaveChanges();
             }
         }
+
+        // 5. Optional large dataset for performance testing (opt-in).
+        // Enabled by setting SEED_LARGE_DATASET=true. Kept out of normal/test runs.
+        var seedLarge = Environment.GetEnvironmentVariable("SEED_LARGE_DATASET");
+        if (string.Equals(seedLarge, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            SeedLargeDataset(context);
+        }
+    }
+
+    /// <summary>
+    /// Bulk-inserts a large number of events (plus random bookings/favorites) so
+    /// list endpoints can be load-tested. Idempotent: only runs while the events
+    /// table is below the target size.
+    /// </summary>
+    private static void SeedLargeDataset(AppDbContext context, int targetEventCount = 1000)
+    {
+        if (context.Events.Count() >= targetEventCount)
+        {
+            return;
+        }
+
+        var categoryIds = context.Categories.Select(c => c.Id).ToList();
+        var userIds = context.Users.Select(u => u.Id).ToList();
+        var organizerId = context.Users.First(u => u.Role == "Admin").Id;
+        if (categoryIds.Count == 0 || userIds.Count == 0)
+        {
+            return;
+        }
+
+        var cities = new[]
+        {
+            "San Francisco, CA", "Austin, TX", "New York, NY", "Chicago, IL",
+            "Denver, CO", "Seattle, WA", "Boston, MA", "Nashville, TN",
+            "Online", "Portland, OR", "Miami, FL", "Atlanta, GA"
+        };
+
+        var rng = new Random(12345); // deterministic
+        var existing = context.Events.Count();
+        var toCreate = targetEventCount - existing;
+
+        var newEvents = new List<Event>(toCreate);
+        for (var i = 0; i < toCreate; i++)
+        {
+            newEvents.Add(new Event
+            {
+                Title = $"Community Event #{existing + i + 1}",
+                Description = "Auto-generated event for performance testing.",
+                Date = DateTime.UtcNow.AddDays(rng.Next(-30, 120)),
+                Location = cities[rng.Next(cities.Length)],
+                CategoryId = categoryIds[rng.Next(categoryIds.Count)],
+                OrganizerId = organizerId
+            });
+        }
+
+        context.Events.AddRange(newEvents);
+        context.SaveChanges();
+
+        // Random RSVPs and favorites so per-event aggregates are non-trivial.
+        var eventIds = context.Events.Select(e => e.Id).ToList();
+        var bookings = new List<EventBooking>();
+        var favorites = new List<EventFavorite>();
+        var favKeys = new HashSet<(Guid, int)>();
+        var statuses = new[] { BookingStatus.Yes, BookingStatus.Maybe, BookingStatus.No };
+
+        foreach (var eventId in eventIds)
+        {
+            var rsvpCount = rng.Next(0, 4);
+            for (var r = 0; r < rsvpCount; r++)
+            {
+                bookings.Add(new EventBooking
+                {
+                    EventId = eventId,
+                    UserId = userIds[rng.Next(userIds.Count)],
+                    BookingDate = DateTime.UtcNow.AddDays(-rng.Next(0, 30)),
+                    Status = statuses[rng.Next(statuses.Length)]
+                });
+            }
+
+            var favCount = rng.Next(0, 3);
+            for (var f = 0; f < favCount; f++)
+            {
+                var userId = userIds[rng.Next(userIds.Count)];
+                if (favKeys.Add((userId, eventId)))
+                {
+                    favorites.Add(new EventFavorite
+                    {
+                        UserId = userId,
+                        EventId = eventId,
+                        AddedAt = DateTime.UtcNow.AddDays(-rng.Next(0, 30))
+                    });
+                }
+            }
+        }
+
+        context.Bookings.AddRange(bookings);
+        context.Favorites.AddRange(favorites);
+        context.SaveChanges();
     }
 }

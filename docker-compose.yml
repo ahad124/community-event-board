@@ -53,6 +53,8 @@ services:
       OpenWeather__BaseUrl: "https://api.openweathermap.org"
       OpenWeather__ApiKey: "${OPENWEATHER_API_KEY:-}"
       Cors__AllowedOrigins__0: "http://localhost"
+      # Seed a large dataset so list endpoints can be load-tested (Phase 3 Incident B).
+      SEED_LARGE_DATASET: "true"
     ports:
       - "8080:8080"
     volumes:

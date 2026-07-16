@@ -102,6 +102,25 @@ public class EventsController : ControllerBase
     }
 
     /// <summary>
+    /// Detailed events listing (public) with rich per-event detail (organizer,
+    /// category, RSVP tallies, favorites) and optional filtering by category,
+    /// date range, location and title.
+    /// </summary>
+    [HttpGet("detailed")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<EventDetailedDto>>> GetDetailedEvents(
+        [FromQuery] int? categoryId,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] string? location,
+        [FromQuery] string? q)
+    {
+        _logger.LogInformation("Retrieving detailed events listing");
+        var events = await _eventRepository.GetDetailedAsync(categoryId, from, to, location, q);
+        return Ok(events);
+    }
+
+    /// <summary>
     /// Get events by category ID
     /// </summary>
     [HttpGet("category/{categoryId}")]
