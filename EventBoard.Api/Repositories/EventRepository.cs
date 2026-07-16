@@ -55,12 +55,13 @@ public class EventRepository : IEventRepository
 
     public async Task<IEnumerable<Event>> SearchByTitleAsync(string term)
     {
-        // Full-text-ish title search. Built as raw SQL so we can tweak the LIKE
-        // pattern easily. The search term is dropped straight into the query text.
-        var sql = $"SELECT * FROM Events WHERE Title LIKE '%{term}%'";
+        // Title search via EF Core LINQ. The term is bound as a parameter by the
+        // provider (translated to a parameterized LIKE), so it can never alter the
+        // SQL structure — safe from SQL injection. EF also escapes LIKE wildcards.
+        term = term.Trim();
 
         return await _context.Events
-            .FromSqlRaw(sql)
+            .Where(e => e.Title.Contains(term))
             .Include(e => e.Category)
             .Include(e => e.Organizer)
             .AsNoTracking()
