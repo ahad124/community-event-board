@@ -9,8 +9,19 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Polly;
 using Polly.Extensions.Http;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Structured logging with Serilog -> Console + Seq.
+// The Seq server URL comes from configuration ("Seq:ServerUrl"), overridable via
+// the Seq__ServerUrl environment variable (set to http://seq:80 in docker-compose).
+// All existing ILogger<T> calls flow through Serilog unchanged.
+builder.Host.UseSerilog((context, loggerConfig) => loggerConfig
+    .ReadFrom.Configuration(context.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.Seq(context.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341"));
 
 // Add services to the container
 // Serialize/accept enums as their string names (e.g. BookingStatus "Confirmed")
@@ -94,10 +105,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add logging
-builder.Services.AddLogging();
-
 var app = builder.Build();
+
+// Log every HTTP request as a single structured event (method, path, status
+// code, elapsed ms). Feeds the "Slow Endpoint" runbook query (Elapsed > 1000).
+app.UseSerilogRequestLogging();
 
 // Global error handling.
 // In Development we surface the detailed developer exception page to aid

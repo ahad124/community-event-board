@@ -18,6 +18,19 @@ services:
       retries: 12
       start_period: 20s
 
+  # ---------- Seq (structured log server / dashboard) ----------
+  seq:
+    image: datalust/seq:latest
+    container_name: eventboard-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      # Local dev only: skip Seq's login so the dashboard opens without a password.
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+    ports:
+      - "5341:80"          # Seq UI + ingestion (the container serves both on port 80)
+    volumes:
+      - seq_data:/data
+
   # ---------- Backend API ----------
   api:
     build:
@@ -27,7 +40,10 @@ services:
     depends_on:
       sqlserver:
         condition: service_healthy
+      seq:
+        condition: service_started
     environment:
+      Seq__ServerUrl: "http://seq:80"
       ASPNETCORE_ENVIRONMENT: "Production"
       ASPNETCORE_URLS: "http://+:8080"
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=EventBoardDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-EventBoard_Db!Passw0rd};TrustServerCertificate=True;Encrypt=False"
@@ -56,3 +72,4 @@ services:
 volumes:
   mssql_data:
   uploads_data:
+  seq_data:
