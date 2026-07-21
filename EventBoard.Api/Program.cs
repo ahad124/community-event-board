@@ -66,6 +66,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddHealthChecks();
+
 // Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -121,7 +123,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.MapHealthChecks("/health");
 // Apply migrations & seed database on startup.
 // SQL Server in Docker can take a while to accept connections, so retry a few times.
 using (var scope = app.Services.CreateScope())

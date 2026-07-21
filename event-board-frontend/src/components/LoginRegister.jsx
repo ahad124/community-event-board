@@ -200,21 +200,7 @@ const LoginRegister = () => {
                   </div>
                 )}
 
-                {!isLogin && (
-                  <div className="form-floating mb-4">
-                    <select
-                      className="form-select rounded-3"
-                      id="roleInput"
-                      value={role}
-                      onChange={(e) => setRole(e.target.value)}
-                      required
-                    >
-                      <option value="User">User</option>
-                      <option value="Admin">Admin</option>
-                    </select>
-                    <label htmlFor="roleInput">Register As</label>
-                  </div>
-                )}
+
 
                 <button
                   type="submit"

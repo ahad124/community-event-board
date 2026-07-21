@@ -18,6 +18,18 @@ services:
       retries: 12
       start_period: 20s
 
+  # ---------- Seq (structured log server / dashboard) ----------
+  seq:
+    image: datalust/seq:latest
+    container_name: eventboard-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+
   # ---------- Backend API ----------
   api:
     build:
@@ -27,7 +39,10 @@ services:
     depends_on:
       sqlserver:
         condition: service_healthy
+      seq:
+        condition: service_started
     environment:
+      Seq__ServerUrl: "http://seq:80"
       ASPNETCORE_ENVIRONMENT: "Production"
       ASPNETCORE_URLS: "http://+:8080"
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=EventBoardDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-EventBoard_Db!Passw0rd};TrustServerCertificate=True;Encrypt=False"
@@ -37,10 +52,17 @@ services:
       OpenWeather__BaseUrl: "https://api.openweathermap.org"
       OpenWeather__ApiKey: "${OPENWEATHER_API_KEY:-}"
       Cors__AllowedOrigins__0: "http://localhost"
+      SEED_LARGE_DATASET: "true"
     ports:
       - "8080:8080"
     volumes:
       - uploads_data:/app/wwwroot/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   # ---------- Frontend (Nginx) ----------
   frontend:
@@ -49,10 +71,12 @@ services:
       dockerfile: Dockerfile
     container_name: eventboard-frontend
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "80:80"
 
 volumes:
   mssql_data:
   uploads_data:
+  seq_data:
